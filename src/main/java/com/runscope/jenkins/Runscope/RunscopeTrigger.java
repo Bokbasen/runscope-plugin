@@ -1,5 +1,15 @@
 package com.runscope.jenkins.Runscope;
 
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.apache.http.util.EntityUtils;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.concurrent.Callable;
@@ -8,21 +18,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
-import org.apache.http.util.EntityUtils;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.impl.nio.client.HttpAsyncClients;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-
 /**
  * RunscopeTrigger
  *
- * @email help@runscope.com
+ * email: help@runscope.com
  */
 public class RunscopeTrigger implements Callable<String> {
 
@@ -87,9 +86,9 @@ public class RunscopeTrigger implements Callable<String> {
     /**
      * Method for making HTTP call
      *
-     * @param url
-     * @param apiEndPoint
-     * @return
+     * @param url The url to call
+     * @param apiEndPoint endpoint
+     * @return The result of the call. "pass" or "fail"
      */
     public String process(String url, final String apiEndPoint) {
         String result = "";

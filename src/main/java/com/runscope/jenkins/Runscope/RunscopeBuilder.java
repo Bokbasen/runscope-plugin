@@ -1,38 +1,35 @@
 package com.runscope.jenkins.Runscope;
 
+import hudson.EnvVars;
+import hudson.Extension;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.model.*;
+import hudson.tasks.BuildStepDescriptor;
+import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Builder;
+import jenkins.tasks.SimpleBuildStep;
+import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
+
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import hudson.EnvVars;
-import hudson.Launcher;
-import hudson.Extension;
-import hudson.model.AbstractBuild;
-import hudson.model.BuildListener;
-import hudson.model.Result;
-import hudson.model.AbstractProject;
-import hudson.tasks.Builder;
-import hudson.tasks.BuildStepDescriptor;
-
-import org.kohsuke.stapler.DataBoundConstructor;
+import java.util.Collection;
+import java.util.concurrent.*;
 
 /**
  * RunscopeBuilder {@link Builder}.
  *
- * @email  help@runscope.com
+ * email:  help@runscope.com
  */
-public class RunscopeBuilder extends Builder {
+public class RunscopeBuilder implements SimpleBuildStep {
 
     private static final String DISPLAY_NAME = "Runscope Test Configuration";
     private static final String TEST_RESULTS_PASS = "pass";
  	
-    private final String triggerEndPoint;
-    private final String accessToken;
+    private String triggerEndPoint;
+    private String accessToken;
     private int timeout = 60;
     
     public String resp;
@@ -45,66 +42,97 @@ public class RunscopeBuilder extends Builder {
 		    this.timeout = timeout;
 	}
 
-	/**
+    @DataBoundSetter
+    public void setTriggerEndPoint(String triggerEndPoint) {
+        this.triggerEndPoint = triggerEndPoint;
+    }
+
+    /**
 	 * @return the triggerEndPoint
 	 */
 	public String getTriggerEndPoint() {
 		return triggerEndPoint;
 	}
-	
-	/**
+
+	@DataBoundSetter
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
+    }
+
+    /**
 	 * @return the accessToken
 	 */
 	public String getAccessToken() {
 		return accessToken;
 	}
-	
-	/**
+
+	@DataBoundSetter
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+
+    /**
 	 * @return the timeout
 	 */
 	public Integer getTimeout() {
 		return timeout;
 	}
 
-    /* 
-     * @see hudson.tasks.BuildStepCompatibilityLayer#perform(hudson.model.AbstractBuild, hudson.Launcher, hudson.model.BuildListener)
-     */
     @Override
-    public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
-	PrintStream logger = listener.getLogger();
-	EnvVars envVars = build.getEnvironment(listener);
-	String expandedTriggerEndPoint = envVars.expand(triggerEndPoint);
+    public void perform(@Nonnull Run<?, ?> run, @Nonnull FilePath filePath, @Nonnull Launcher launcher, @Nonnull TaskListener taskListener) throws InterruptedException, IOException {
+        PrintStream logger = taskListener.getLogger();
+        EnvVars envVars = run.getEnvironment(taskListener);
+        String expandedTriggerEndPoint = envVars.expand(triggerEndPoint);
 
-    	logger.println("Build Trigger Configuration:");
-	logger.println("Trigger End Point:" + expandedTriggerEndPoint);
-    	logger.println("Access Token:" + accessToken);
-    	logger.println("Timeout:" + timeout);
-    	
+        logger.println("Build Trigger Configuration:");
+        logger.println("Trigger End Point:" + expandedTriggerEndPoint);
+        logger.println("Access Token:" + accessToken);
+        logger.println("Timeout:" + timeout);
+
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         Future<String> future = executorService.submit(new RunscopeTrigger(logger, expandedTriggerEndPoint, accessToken /*triggerEndPoint, */));
 
         try {
             String result = future.get(timeout, TimeUnit.SECONDS);
             if (!TEST_RESULTS_PASS.equalsIgnoreCase(result)) {
-        	build.setResult(Result.FAILURE);
+                run.setResult(Result.FAILURE);
             }
         } catch (TimeoutException e) {
             logger.println("Timeout Exception:" + e.toString());
-            build.setResult(Result.FAILURE);
+
+            run.setResult(Result.FAILURE);
             e.printStackTrace();
         } catch (Exception e) {
             logger.println("Exception:" + e.toString());
-            build.setResult(Result.FAILURE);
+            run.setResult(Result.FAILURE);
             e.printStackTrace();
         }
         executorService.shutdownNow();
-        
-        return true;
     }
-    
+
     @Override
-    public DescriptorImpl getDescriptor() {
-        return (DescriptorImpl)super.getDescriptor();
+    public boolean prebuild(AbstractBuild<?, ?> abstractBuild, BuildListener buildListener) {
+        return false;
+    }
+
+    @Override
+    public boolean perform(AbstractBuild<?, ?> abstractBuild, Launcher launcher, BuildListener buildListener) throws InterruptedException, IOException {
+        return false;
+    }
+
+    @Override
+    public Action getProjectAction(AbstractProject<?, ?> abstractProject) {
+        return null;
+    }
+
+    @Override
+    public Collection<? extends Action> getProjectActions(AbstractProject<?, ?> abstractProject) {
+        return null;
+    }
+
+    @Override
+    public BuildStepMonitor getRequiredMonitorService() {
+        return BuildStepMonitor.NONE;
     }
 
     /**
