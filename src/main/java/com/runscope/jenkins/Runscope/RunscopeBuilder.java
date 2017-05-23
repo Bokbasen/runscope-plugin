@@ -31,8 +31,6 @@ public class RunscopeBuilder implements SimpleBuildStep {
     private String triggerEndPoint;
     private String accessToken;
     private int timeout = 60;
-    
-    public String resp;
 
     @DataBoundConstructor
     public RunscopeBuilder(String triggerEndPoint, String accessToken, int timeout) {
@@ -134,7 +132,7 @@ public class RunscopeBuilder implements SimpleBuildStep {
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
     }
-
+    
     /**
      * Descriptor for {@link RunscopeBuilder}. Used as a singleton.
      * The class is marked as public so that it can be accessed from views.
