@@ -21,7 +21,7 @@ import java.util.concurrent.*;
 /**
  * RunscopeBuilder {@link Builder}.
  *
- * email:  help@runscope.com
+ * email  help@runscope.com
  */
 public class RunscopeBuilder implements SimpleBuildStep {
 
@@ -31,7 +31,7 @@ public class RunscopeBuilder implements SimpleBuildStep {
     private String triggerEndPoint;
     private String accessToken;
     private int timeout = 60;
-
+    
     @DataBoundConstructor
     public RunscopeBuilder(String triggerEndPoint, String accessToken, int timeout) {
 		this.triggerEndPoint = triggerEndPoint;

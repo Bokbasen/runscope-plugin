@@ -1,8 +1,11 @@
 package com.runscope.jenkins.Runscope;
 
+import hudson.ProxyConfiguration;
+import jenkins.model.Jenkins;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.http.HttpHeaders;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
@@ -21,7 +24,7 @@ import java.util.logging.Logger;
 /**
  * RunscopeTrigger
  *
- * email: help@runscope.com
+ * email help@runscope.com
  */
 public class RunscopeTrigger implements Callable<String> {
 
@@ -96,10 +99,29 @@ public class RunscopeTrigger implements Callable<String> {
         try {
             httpclient.start();
 
-            final RequestConfig config = RequestConfig.custom()
-                    .setConnectTimeout(60 * 1000)
-                    .setConnectionRequestTimeout(60 * 1000)
-                    .setSocketTimeout(60 * 1000).build();
+	    Jenkins j = Jenkins.getInstance();
+	    ProxyConfiguration proxyConfig = null;
+	    if (j != null) {
+		    proxyConfig = j.proxy;
+	    }
+
+	    RequestConfig config = null;
+
+	    if (proxyConfig != null) {
+		    HttpHost proxy = new HttpHost(proxyConfig.name, proxyConfig.port);
+		    config = RequestConfig.custom()
+			    .setConnectTimeout(60 * 1000)
+			    .setConnectionRequestTimeout(60 * 1000)
+			    .setSocketTimeout(60 * 1000)
+			    .setProxy(proxy)
+			    .build();
+	    } else {
+		    config = RequestConfig.custom()
+			    .setConnectTimeout(60 * 1000)
+			    .setConnectionRequestTimeout(60 * 1000)
+			    .setSocketTimeout(60 * 1000)
+			    .build();
+	    }
 
             final HttpGet request = new HttpGet(url);
             request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken);
